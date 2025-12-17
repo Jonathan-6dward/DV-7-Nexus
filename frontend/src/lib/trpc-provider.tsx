@@ -6,22 +6,10 @@ import { httpBatchLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { useState } from 'react';
 import superjson from 'superjson';
-import type { AppRouter } from '../../backend/src/routers'; // Adjust path as needed
-
-export const trpc = createTRPCReact<AppRouter>();
+import type { AppRouter } from '../../../backend/src/routers'; // Adjust path as needed
+import { trpc, queryClient } from './trpc';
 
 export const TRPCProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 5 * 1000, // 5 seconds
-          },
-        },
-      })
-  );
-
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [

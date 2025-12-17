@@ -24,9 +24,10 @@ export function VideoUploader({ onUrlSubmit, isLoading }: VideoUploaderProps) {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     setUrlError('');
-    
+
     if (!url.trim()) {
       setUrlError('Por favor, insira uma URL');
       return;
@@ -53,7 +54,7 @@ export function VideoUploader({ onUrlSubmit, isLoading }: VideoUploaderProps) {
           value={url}
           onChange={(e) => {
             setUrl(e.target.value);
-            setUrlError('');
+            if (urlError) setUrlError('');
           }}
           disabled={isLoading}
           className={urlError ? 'border-red-500' : ''}

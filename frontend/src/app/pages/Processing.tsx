@@ -4,7 +4,7 @@ import { Sparkles } from 'lucide-react';
 import { ProgressTracker } from '../components/ProgressTracker';
 import { Card } from '../components/ui/card';
 import { useVideoStore } from '../../store/useVideoStore';
-import { mockUtils } from '../../lib/trpc';
+// Removido import de mockUtils - não existe mais
 import { toast } from 'sonner';
 
 export function Processing() {
@@ -59,10 +59,21 @@ export function Processing() {
 
   useEffect(() => {
     if (processingStep === 'complete' && progress >= 100) {
-      // Gerar dados mock para dublagem e renderização
+      // Gerar dados mock para dublagem e renderização (implementação direta)
       if (currentVideo) {
-        const mockDubbing = mockUtils.generateMockDubbing(currentVideo.id);
-        mockDubbing.status = 'completed';
+        const mockDubbing = {
+          id: currentVideo.id,
+          videoId: currentVideo.id,
+          transcriptId: 1,
+          targetLanguage: 'en-US',
+          voiceProfile: 'professional-male',
+          outputUrl: `/output/dubbed-${currentVideo.id}.mp4`,
+          status: 'completed',
+          processingTime: 180,
+          voiceParams: { pitch: 1.0, speed: 1.0 },
+          createdAt: new Date(),
+        };
+
         setCurrentDubbing(mockDubbing);
 
         setCurrentRendered({

@@ -1,4 +1,4 @@
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./core/trpc";
 import { z } from "zod";
 import {
   getUserTasks,
@@ -23,152 +23,128 @@ import {
   createRenderedVideo,
 } from "./db";
 
-import { COOKIE_NAME } from '../shared/const';
-
 export const appRouter = router({
+  health: publicProcedure.query(() => ({ status: 'OK', service: 'DV-7 Nexus Backend', timestamp: new Date() })),
+
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query(({ ctx }) => ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
-      ctx.res.clearCookie(COOKIE_NAME, {
+      ctx.res.clearCookie('session', {
         httpOnly: true,
-        secure: true,  // For test compatibility
-        maxAge: -1,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
         path: '/',
-        sameSite: 'none' as const,  // For test compatibility
       });
-      return {
-        success: true,
-      } as const;
+      return { success: true };
     }),
   }),
 
   // DV-7 Nexus Video Processing Routes
   videos: router({
-    // List user's videos
     list: protectedProcedure.query(({ ctx }) => getUserVideos(ctx.user.id)),
 
-    // Get specific video
     get: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input, ctx }) => {
         const video = await getVideoById(input.id);
         if (!video || video.userId !== ctx.user.id) {
-          throw new Error('Video not found or unauthorized');
+          throw new Error('Vídeo não encontrado ou não autorizado');
         }
         return video;
       }),
 
-    // Submit video for processing
     submit: protectedProcedure
       .input(
         z.object({
-          url: z.string().url('Must be a valid URL'),
-          targetLanguage: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, 'Invalid language format (e.g., en-US)'),
+          url: z.string().url(),
+          targetLanguage: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/),
           voiceProfile: z.string().optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
-        // Create video record
         const video = await createVideo(ctx.user.id, {
           url: input.url,
           status: 'pending',
           sourcePlatform: extractPlatformFromUrl(input.url),
-        });
-
-        // Create a processing task
-        await createTask(ctx.user.id, {
-          videoId: video.id,
-          type: 'capture',
-          title: 'Video Capture',
-          description: `Capturing video from ${input.url}`,
-          status: 'pending',
+          filePath: '', // Será preenchido durante o processamento
         });
 
         return video;
       }),
 
-    // Update video status
     update: protectedProcedure
-      .input(
-        z.object({
-          id: z.number(),
-          title: z.string().optional(),
-          status: z.enum(['pending', 'processing', 'completed', 'error', 'cancelled']).optional(),
-        })
-      )
+      .input(z.object({
+        id: z.number(),
+        title: z.string().optional(),
+        status: z.enum(['pending', 'processing', 'completed', 'error', 'cancelled']).optional(),
+      }))
       .mutation(({ input, ctx }) => {
         const { id, ...data } = input;
         return updateVideo(id, ctx.user.id, data);
       }),
 
-    // Delete video
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(({ input, ctx }) => deleteVideo(input.id, ctx.user.id)),
   }),
 
-  // Transcription routes
   transcription: router({
     get: protectedProcedure
       .input(z.object({ videoId: z.number() }))
       .query(async ({ input, ctx }) => {
         const video = await getVideoById(input.videoId);
         if (!video || video.userId !== ctx.user.id) {
-          throw new Error('Video not found or unauthorized');
+          throw new Error('Vídeo não encontrado ou não autorizado');
         }
         return getTranscriptByVideoId(input.videoId);
       }),
 
     create: protectedProcedure
-      .input(
-        z.object({
-          videoId: z.number(),
-          language: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, 'Invalid language format'),
-        })
-      )
+      .input(z.object({
+        videoId: z.number(),
+        language: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/),
+      }))
       .mutation(async ({ input, ctx }) => {
         const video = await getVideoById(input.videoId);
         if (!video || video.userId !== ctx.user.id) {
-          throw new Error('Video not found or unauthorized');
+          throw new Error('Vídeo não encontrado ou não autorizado');
         }
 
         return createTranscript({
           videoId: input.videoId,
           language: input.language,
+          content: '', // Preenchido após processamento
           status: 'pending',
         });
       }),
   }),
 
-  // Dubbing routes
   dubbing: router({
     get: protectedProcedure
       .input(z.object({ videoId: z.number() }))
       .query(async ({ input, ctx }) => {
         const video = await getVideoById(input.videoId);
         if (!video || video.userId !== ctx.user.id) {
-          throw new Error('Video not found or unauthorized');
+          throw new Error('Vídeo não encontrado ou não autorizado');
         }
         return getDubbingByVideoId(input.videoId);
       }),
 
     create: protectedProcedure
-      .input(
-        z.object({
-          videoId: z.number(),
-          targetLanguage: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, 'Invalid language format'),
-          voiceProfile: z.string(),
-        })
-      )
+      .input(z.object({
+        videoId: z.number(),
+        targetLanguage: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/),
+        voiceProfile: z.string(),
+      }))
       .mutation(async ({ input, ctx }) => {
         const video = await getVideoById(input.videoId);
         if (!video || video.userId !== ctx.user.id) {
-          throw new Error('Video not found or unauthorized');
+          throw new Error('Vídeo não encontrado ou não autorizado');
         }
 
         return createDubbing({
           videoId: input.videoId,
-          transcriptId: 1, // Would be dynamic in real implementation
+          transcriptId: 1, // Será dinâmico na implementação real
           targetLanguage: input.targetLanguage,
           voiceProfile: input.voiceProfile,
           status: 'pending',
@@ -176,20 +152,18 @@ export const appRouter = router({
       }),
   }),
 
-  // Rendered videos routes
   renderedVideos: router({
     get: protectedProcedure
       .input(z.object({ videoId: z.number() }))
       .query(async ({ input, ctx }) => {
         const video = await getVideoById(input.videoId);
         if (!video || video.userId !== ctx.user.id) {
-          throw new Error('Video not found or unauthorized');
+          throw new Error('Vídeo não encontrado ou não autorizado');
         }
         return getRenderedVideoByVideoId(input.videoId);
       }),
   }),
 
-  // Traditional task routes (simplified)
   tasks: router({
     list: protectedProcedure.query(({ ctx }) => getUserTasks(ctx.user.id)),
 
@@ -198,44 +172,36 @@ export const appRouter = router({
       .query(async ({ input, ctx }) => {
         const task = await getTaskById(input.id);
         if (!task || task.userId !== ctx.user.id) {
-          throw new Error('Task not found or unauthorized');
+          throw new Error('Tarefa não encontrada ou não autorizada');
         }
         return task;
       }),
 
     create: protectedProcedure
-      .input(
-        z.object({
-          title: z.string().min(1, 'Title is required'),
-          description: z.string().optional(),
-          status: z.enum(['todo', 'in_progress', 'done']).optional(),
-          priority: z.enum(['low', 'medium', 'high']).optional(),
-          dueDate: z.date().optional(),
-        })
-      )
+      .input(z.object({
+        title: z.string().min(1),
+        description: z.string().optional(),
+        status: z.enum(['pending', 'processing', 'completed', 'error', 'cancelled']).optional(),
+        priority: z.enum(['low', 'medium', 'high']).optional(),
+      }))
       .mutation(({ input, ctx }) =>
         createTask(ctx.user.id, {
           title: input.title,
           description: input.description,
-          status: input.status || 'todo',
+          status: input.status || 'pending',
           priority: input.priority || 'medium',
-          dueDate: input.dueDate,
           completed: false,
         })
       ),
 
     update: protectedProcedure
-      .input(
-        z.object({
-          id: z.number(),
-          title: z.string().optional(),
-          description: z.string().optional(),
-          status: z.enum(['todo', 'in_progress', 'done']).optional(),
-          priority: z.enum(['low', 'medium', 'high']).optional(),
-          completed: z.boolean().optional(),
-          dueDate: z.date().optional(),
-        })
-      )
+      .input(z.object({
+        id: z.number(),
+        title: z.string().optional(),
+        status: z.enum(['pending', 'processing', 'completed', 'error', 'cancelled']).optional(),
+        priority: z.enum(['low', 'medium', 'high']).optional(),
+        completed: z.boolean().optional(),
+      }))
       .mutation(({ input, ctx }) => {
         const { id, ...data } = input;
         return updateTask(id, ctx.user.id, data);
@@ -252,12 +218,10 @@ export const appRouter = router({
       .query(({ input }) => getTaskComments(input.taskId)),
 
     create: protectedProcedure
-      .input(
-        z.object({
-          taskId: z.number(),
-          content: z.string().min(1, 'Content is required'),
-        })
-      )
+      .input(z.object({
+        taskId: z.number(),
+        content: z.string().min(1),
+      }))
       .mutation(({ input, ctx }) =>
         createComment(input.taskId, ctx.user.id, input.content)
       ),
@@ -279,5 +243,5 @@ function extractPlatformFromUrl(url: string): string {
   if (url.includes('twitter.com') || url.includes('x.com')) return 'twitter';
   if (url.includes('vimeo.com')) return 'vimeo';
   if (url.includes('reddit.com')) return 'reddit';
-  return 'unknown';
+  return 'other';
 }

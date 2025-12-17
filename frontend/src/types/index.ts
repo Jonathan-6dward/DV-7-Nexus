@@ -1,11 +1,29 @@
-// Status Types
+// frontend/src/types/index.ts - Tipos utilizados na aplicação DV-7 Nexus
+
+// Estados de processamento de vídeo
 export type VideoStatus = 'pending' | 'processing' | 'completed' | 'error' | 'cancelled';
 export type TranscriptStatus = 'pending' | 'processing' | 'completed' | 'error';
 export type DubbingStatus = 'pending' | 'processing' | 'completed' | 'error' | 'cancelled';
 export type RenderStatus = 'pending' | 'processing' | 'completed' | 'error' | 'cancelled';
 export type RenderType = 'dubbing' | 'subtitles' | 'both';
 
-// Video Types
+// Plataformas suportadas
+export const SUPPORTED_PLATFORMS = [
+  'youtube',
+  'tiktok',
+  'instagram',
+  'facebook',
+  'twitter',
+  'x',
+  'vimeo',
+  'reddit',
+  'twitch',
+  'dailymotion'
+] as const;
+
+export type SupportedPlatform = typeof SUPPORTED_PLATFORMS[number];
+
+// Tipos de entidade principais
 export interface Video {
   id: number;
   userId: number;
@@ -14,19 +32,12 @@ export interface Video {
   duration?: number;
   filePath: string;
   status: VideoStatus;
-  sourcePlatform?: string;
+  sourcePlatform?: SupportedPlatform;
   language?: string;
   fileSize?: number;
   thumbnailUrl?: string;
   createdAt: Date;
   updatedAt: Date;
-}
-
-// Transcript Types
-export interface TranscriptSegment {
-  start: number;
-  end: number;
-  text: string;
 }
 
 export interface Transcript {
@@ -40,7 +51,12 @@ export interface Transcript {
   createdAt: Date;
 }
 
-// Dubbing Types
+export interface TranscriptSegment {
+  start: number;
+  end: number;
+  text: string;
+}
+
 export interface Dubbing {
   id: number;
   videoId: number;
@@ -55,7 +71,6 @@ export interface Dubbing {
   createdAt: Date;
 }
 
-// Rendered Video Types
 export interface RenderedVideo {
   id: number;
   videoId: number;
@@ -71,35 +86,18 @@ export interface RenderedVideo {
   createdAt: Date;
 }
 
-// Task Types
-export interface Task {
-  id: number;
-  title: string;
-  description?: string;
-  status: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Comment Types
-export interface Comment {
-  id: number;
-  taskId: number;
-  content: string;
-  createdAt: Date;
-}
-
-// User Types
+// Tipos de usuário e autenticação
 export interface User {
   id: number;
   openId: string;
-  name: string;
-  email: string;
-  role: string;
+  name?: string;
+  email?: string;
+  role?: string;
   createdAt: Date;
+  lastSignedIn: Date;
 }
 
-// Form Input Types
+// Tipos de entrada para mutações
 export interface VideoSubmitInput {
   url: string;
   targetLanguage: string;
@@ -117,36 +115,26 @@ export interface DubbingCreateInput {
   voiceProfile: string;
 }
 
-// Supported Platforms
-export const SUPPORTED_PLATFORMS = [
-  'YouTube',
-  'TikTok',
-  'Instagram',
-  'Twitter',
-  'Facebook',
-  'Vimeo',
-] as const;
+// Tipos de entrada para formulários
+export interface VideoCaptureInput {
+  url: string;
+  targetLanguage: string;
+  voiceProfile: string;
+}
 
-// Languages
-export const LANGUAGES = [
-  { code: 'pt-BR', name: 'Português (Brasil)' },
-  { code: 'en-US', name: 'English (US)' },
-  { code: 'es-ES', name: 'Español' },
-  { code: 'fr-FR', name: 'Français' },
-  { code: 'de-DE', name: 'Deutsch' },
-  { code: 'it-IT', name: 'Italiano' },
-  { code: 'ja-JP', name: '日本語' },
-  { code: 'ko-KR', name: '한국어' },
-  { code: 'zh-CN', name: '中文 (简体)' },
-] as const;
+// Tipos de tarefas e comentários
+export interface Task {
+  id: number;
+  title: string;
+  description?: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-// Voice Profiles
-export const VOICE_PROFILES = [
-  { id: 'professional-male', name: 'Profissional Masculino' },
-  { id: 'professional-female', name: 'Profissional Feminino' },
-  { id: 'casual-male', name: 'Casual Masculino' },
-  { id: 'casual-female', name: 'Casual Feminino' },
-  { id: 'energetic', name: 'Energético' },
-  { id: 'calm', name: 'Calmo' },
-  { id: 'narrative', name: 'Narrativo' },
-] as const;
+export interface Comment {
+  id: number;
+  taskId: number;
+  content: string;
+  createdAt: Date;
+}

@@ -7,7 +7,7 @@ import { Textarea } from '../components/ui/textarea';
 import { LanguageSelector } from '../components/LanguageSelector';
 import { VoiceProfileSelector } from '../components/VoiceProfileSelector';
 import { useVideoStore } from '../../store/useVideoStore';
-import { mockUtils } from '../../lib/trpc';
+// Removido mockUtils - não existe mais
 import { toast } from 'sonner';
 
 export function TranscriptionReview() {
@@ -35,8 +35,22 @@ export function TranscriptionReview() {
       return;
     }
 
-    // Carregar transcrição mock
-    const mockTranscript = mockUtils.generateMockTranscript(currentVideo.id);
+    // Carregar transcrição mock (implementação direta)
+    const mockTranscript = {
+      id: currentVideo.id,
+      videoId: currentVideo.id,
+      language: 'pt-BR',
+      content: 'Esta é uma transcrição de exemplo do vídeo...',
+      segments: [
+        { start: 0, end: 5, text: 'Olá, bem-vindo ao nosso vídeo' },
+        { start: 5, end: 10, text: 'Hoje vamos falar sobre tecnologia' },
+        { start: 10, end: 15, text: 'E suas aplicações no dia a dia' },
+      ],
+      status: 'completed',
+      processingTime: 45,
+      createdAt: new Date(),
+    };
+
     setCurrentTranscript(mockTranscript);
     setTranscript(mockTranscript.content);
   }, [currentVideo, navigate, setCurrentTranscript]);

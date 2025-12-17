@@ -14,6 +14,11 @@ import type {
   VideoSubmitInput,
   TranscriptCreateInput,
   DubbingCreateInput,
+  VideoStatus,
+  TranscriptStatus,
+  DubbingStatus,
+  RenderStatus,
+  RenderType,
 } from '../types';
 
 // Configuração do Query Client
@@ -26,7 +31,7 @@ export const queryClient = new QueryClient({
   },
 });
 
-// Configuração do tRPC client para conexão com o backend
+// Configuração do tRPC client para conexão com o backend DV-7 Nexus
 export const trpc = createTRPCReact<{
   auth: {
     me: {

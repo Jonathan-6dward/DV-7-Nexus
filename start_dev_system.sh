@@ -66,9 +66,10 @@ SECRET_KEY=dv7_nexus_secret_key_2025
 EOL
 fi
 
-# Executar migrações do banco de dados
-echo "💾 Executando migrações do banco de dados..."
-npx prisma migrate dev --name init
+# Executar migrações do banco de dados (Drizzle)
+echo "💾 Executando migrações do banco de dados (Drizzle)..."
+npx drizzle-kit generate:mysql
+npx drizzle-kit migrate
 
 # Iniciar backend em background
 echo "⚙️ Iniciando servidor backend..."
@@ -93,9 +94,11 @@ if [ ! -f .env ]; then
     echo "📝 Criando arquivo .env do frontend..."
     cat > .env << EOL
 # DV-7 Nexus Frontend Configuration
-NEXT_PUBLIC_API_URL=http://localhost:3000
-NEXT_PUBLIC_BACKEND_URL=http://localhost:3000
+VITE_API_URL=http://localhost:3000
+VITE_BACKEND_URL=http://localhost:3000
 NODE_ENV=development
+VITE_APP_TITLE=DV-7\ Nexus
+VITE_APP_DESCRIPTION=Sistema\ de\ Dublagem\ e\ Vocalização
 EOL
 fi
 
@@ -122,16 +125,16 @@ echo ""
 cleanup() {
     echo ""
     echo "🛑 Parando DV-7 Nexus..."
-    
+
     # Matar processos
     if [ ! -z "$BACKEND_PID" ]; then
         kill $BACKEND_PID 2>/dev/null || true
     fi
-    
+
     if [ ! -z "$FRONTEND_PID" ]; then
         kill $FRONTEND_PID 2>/dev/null || true
     fi
-    
+
     echo "✅ DV-7 Nexus parado."
     exit 0
 }
