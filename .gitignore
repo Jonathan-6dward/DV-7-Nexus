@@ -1,0 +1,115 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment
+.env*
+!.env.example
+
+# Build outputs
+dist/
+build/
+.next/
+.nuxt/
+out/
+.output/
+.output-public/
+.output-server/
+.output-route/
+.output-worker/
+.output-standalone/
+.output-static/
+
+# Database
+*.db
+*.db-journal
+
+# System
+.DS_Store
+Thumbs.db
+*.log
+
+# IDE
+.vscode/
+.idea/
+.atom/
+*.swp
+*.swo
+*~
+
+# OS
+ehthumbs.db
+Icon?
+VolumeIcon.icns
+
+# Backend specific
+/backend/dist/
+/backend/logs/
+/backend/.nyc_output/
+/backend/coverage/
+
+# Frontend specific
+/frontend/.next/
+/frontend/out/
+/frontend/node_modules/
+
+# Docker
+.docker/
+*.dockerignore
+
+# Scripts
+*.sh.bak
+*.ps1.bak
+
+# OS Generated
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*~
+*.bak
+*.backup
+
+# Runtime
+npm/
+node/
+node_modules/
+jspm_packages/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Logs
+logs/
+*.log
+
+# Environment specific
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Next.js
+.next/
+out/
+
+# TypeScript
+*.tsbuildinfo
+*.js.map
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
