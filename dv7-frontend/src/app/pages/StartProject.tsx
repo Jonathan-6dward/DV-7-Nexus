@@ -22,17 +22,18 @@ export function StartProject() {
   const [targetLanguage, setTargetLanguage] = useState('en-US');
   const [voiceProfile, setVoiceProfile] = useState('professional-male');
 
-  // tRPC mutation para submeter vídeo
+  // Use tRPC mutation for video submission
   const submitVideoMutation = trpc.videos.submit.useMutation({
-    onSuccess: (video) => {
-      setCurrentVideo(video);
+    onSuccess: (data) => {
+      // @ts-ignore - data structure from backend
+      setCurrentVideo(data);
       setProcessingStep('upload');
       setIsProcessing(true);
       setProgress(10);
 
-      toast.success('Vídeo enviado para processamento com sucesso!');
+      toast.success('Vídeo capturado com sucesso!');
 
-      // Continuar para próxima etapa após confirmação do backend
+      // Simular progresso
       setTimeout(() => {
         setProcessingStep('transcription');
         setProgress(25);
@@ -40,9 +41,9 @@ export function StartProject() {
       }, 2000);
     },
     onError: (error) => {
-      toast.error(`Erro ao enviar vídeo: ${error.message}`);
-      console.error('Erro de envio:', error);
-    }
+      toast.error('Erro ao capturar vídeo: ' + error.message);
+      console.error(error);
+    },
   });
 
   const handleUrlSubmit = (url: string) => {
@@ -55,22 +56,12 @@ export function StartProject() {
       return;
     }
 
-    // Validar formato de idioma
-    if (!targetLanguage.match(/^[a-z]{2}(-[A-Z]{2})?$/)) {
-      toast.error('Formato de idioma inválido');
-      return;
-    }
-
-    // Enviar para o backend via tRPC
     submitVideoMutation.mutate({
       url: videoUrl,
       targetLanguage,
-      voiceProfile
+      voiceProfile,
     });
   };
-
-  // Determinar estado de carregamento
-  const isLoading = submitVideoMutation.isPending;
 
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
@@ -84,11 +75,7 @@ export function StartProject() {
           </p>
         </div>
 
-        <VideoUploader
-          onUrlSubmit={handleUrlSubmit}
-          isLoading={isLoading}
-          currentValue={videoUrl}
-        />
+        <VideoUploader onUrlSubmit={handleUrlSubmit} isLoading={submitVideoMutation.isPending} />
 
         <Card className="p-6 space-y-4">
           <h2 className="text-xl">Configurações de Processamento</h2>
@@ -96,30 +83,23 @@ export function StartProject() {
           <LanguageSelector
             value={targetLanguage}
             onChange={setTargetLanguage}
-            disabled={isLoading}
+            disabled={submitVideoMutation.isPending}
           />
 
           <VoiceProfileSelector
             value={voiceProfile}
             onChange={setVoiceProfile}
-            disabled={isLoading}
+            disabled={submitVideoMutation.isPending}
           />
 
           <div className="pt-4">
             <Button
               onClick={handleSubmit}
-              disabled={isLoading || !videoUrl}
+              disabled={submitVideoMutation.isPending || !videoUrl}
               className="w-full"
               size="lg"
             >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                  Processando...
-                </span>
-              ) : (
-                '⚡ Iniciar Processamento'
-              )}
+              {submitVideoMutation.isPending ? 'Processando...' : '⚡ Iniciar Processamento'}
             </Button>
           </div>
         </Card>

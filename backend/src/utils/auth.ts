@@ -1,5 +1,17 @@
 // backend/src/utils/auth.ts
-import { User } from '../types';
+
+// Tipos de usuário - definidos localmente para evitar problemas de importação
+interface User {
+  id: number;
+  openId: string;
+  name?: string | null;
+  email?: string | null;
+  loginMethod?: string | null;
+  role: string;
+  createdAt: Date;
+  updatedAt: Date;
+  lastSignedIn: Date;
+}
 
 /**
  * Validates and extracts user information from authentication token

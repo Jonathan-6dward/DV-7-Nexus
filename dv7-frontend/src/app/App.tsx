@@ -1,14 +1,23 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { TRPCProvider } from '../lib/trpc-provider';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from './components/ui/sonner';
 import { StartProject } from './pages/StartProject';
 import { TranscriptionReview } from './pages/TranscriptionReview';
 import { Processing } from './pages/Processing';
 import { Result } from './pages/Result';
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
 export default function App() {
   return (
-    <TRPCProvider>
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <div className="min-h-screen bg-background">
           <Routes>
@@ -21,6 +30,6 @@ export default function App() {
         </div>
         <Toaster position="top-right" />
       </BrowserRouter>
-    </TRPCProvider>
+    </QueryClientProvider>
   );
 }

@@ -1,90 +1,23 @@
 import { eq, and } from "drizzle-orm";
 import { drizzle as sqliteDrizzle } from "drizzle-orm/better-sqlite3";
-import { drizzle as mysqlDrizzle } from "drizzle-orm/mysql2";
 import Database from "better-sqlite3";
-import { createConnection } from 'mysql2/promise';
-import { ENV } from './_core/env';
-
-// Determine database provider from environment variable
-const dbProvider = process.env.DB_PROVIDER || 'mysql';
-
-let _db: any | null = null;
-
-// Import schema files (we'll determine which one to use at runtime)
-import type {
-  InsertUser as SQLiteInsertUser,
-  InsertTask as SQLiteInsertTask,
-  InsertVideo as SQLiteInsertVideo,
-  InsertTranscript as SQLiteInsertTranscript,
-  InsertDubbing as SQLiteInsertDubbing,
-  InsertRenderedVideo as SQLiteInsertRenderedVideo
-} from "../drizzle/schema-sqlite";
 import {
-  users as sqliteUsers,
-  tasks as sqliteTasks,
-  comments as sqliteComments,
-  videos as sqliteVideos,
-  transcripts as sqliteTranscripts,
-  dubbing as sqliteDubbing,
-  renderedVideos as sqliteRenderedVideos
-} from "../drizzle/schema-sqlite";
-
-import type {
-  InsertUser as MySQLInsertUser,
-  InsertTask as MySQLInsertTask,
-  InsertVideo as MySQLInsertVideo,
-  InsertTranscript as MySQLInsertTranscript,
-  InsertDubbing as MySQLInsertDubbing,
-  InsertRenderedVideo as MySQLInsertRenderedVideo
-} from "../drizzle/schema";
-import {
-  users as mysqlUsers,
-  tasks as mysqlTasks,
-  comments as mysqlComments,
-  videos as mysqlVideos,
-  transcripts as mysqlTranscripts,
-  dubbing as mysqlDubbing,
-  renderedVideos as mysqlRenderedVideos
-} from "../drizzle/schema";
-
-// Select the appropriate schema based on the database provider
-const schema = dbProvider === 'sqlite'
-  ? {
-    users: sqliteUsers,
-    tasks: sqliteTasks,
-    comments: sqliteComments,
-    videos: sqliteVideos,
-    transcripts: sqliteTranscripts,
-    dubbing: sqliteDubbing,
-    renderedVideos: sqliteRenderedVideos
-  }
-  : {
-    users: mysqlUsers,
-    tasks: mysqlTasks,
-    comments: mysqlComments,
-    videos: mysqlVideos,
-    transcripts: mysqlTranscripts,
-    dubbing: mysqlDubbing,
-    renderedVideos: mysqlRenderedVideos
-  };
-
-const {
+  InsertUser,
   users,
   tasks,
+  InsertTask,
   comments,
   videos,
+  InsertVideo,
   transcripts,
+  InsertTranscript,
   dubbing,
+  InsertDubbing,
   renderedVideos
-} = schema;
+} from "../drizzle/schema-sqlite";
+import { ENV } from './_core/env';
 
-// Type aliases for Insert types based on database provider
-type InsertUser = typeof dbProvider extends 'sqlite' ? SQLiteInsertUser : MySQLInsertUser;
-type InsertTask = typeof dbProvider extends 'sqlite' ? SQLiteInsertTask : MySQLInsertTask;
-type InsertVideo = typeof dbProvider extends 'sqlite' ? SQLiteInsertVideo : MySQLInsertVideo;
-type InsertTranscript = typeof dbProvider extends 'sqlite' ? SQLiteInsertTranscript : MySQLInsertTranscript;
-type InsertDubbing = typeof dbProvider extends 'sqlite' ? SQLiteInsertDubbing : MySQLInsertDubbing;
-type InsertRenderedVideo = typeof dbProvider extends 'sqlite' ? SQLiteInsertRenderedVideo : MySQLInsertRenderedVideo;
+let _db: ReturnType<typeof sqliteDrizzle> | null = null;
 
 // Function to mock database for tests
 function createMockDb() {
@@ -106,7 +39,7 @@ function createMockDb() {
     }),
     insert: () => ({
       values: (data: any) => ({
-        onDuplicateKeyUpdate: () => ({}) // MySQL equivalent of onConflictDoUpdate
+        onConflictDoUpdate: () => ({}) // SQLite equivalent
       })
     }),
     update: () => ({
@@ -120,7 +53,7 @@ function createMockDb() {
   } as any;
 }
 
-// Create the drizzle instance based on the database provider
+// Create the drizzle instance for SQLite
 export async function getDb() {
   // Use mock database in test environment
   if (process.env.NODE_ENV === 'test') {
@@ -129,16 +62,8 @@ export async function getDb() {
 
   if (!_db) {
     try {
-      if (dbProvider === 'sqlite') {
-        const sqlite = new Database(process.env.DATABASE_URL?.replace('file:', '') || './dev.db');
-        _db = sqliteDrizzle(sqlite);
-      } else {
-        // Use MySQL connection
-        const connection = await createConnection({
-          uri: process.env.DATABASE_URL,
-        });
-        _db = mysqlDrizzle(connection);
-      }
+      const sqlite = new Database(process.env.DATABASE_URL?.replace('file:', '') || './dev.db');
+      _db = sqliteDrizzle(sqlite);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -197,17 +122,10 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    if (dbProvider === 'sqlite') {
-      await db.insert(users).values(values).onConflictDoUpdate({
-        target: users.openId,
-        set: updateSet,
-      });
-    } else {
-      // MySQL uses onDuplicateKeyUpdate
-      await db.insert(users).values(values).onDuplicateKeyUpdate({
-        set: updateSet,
-      });
-    }
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: users.openId,
+      set: updateSet,
+    });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;

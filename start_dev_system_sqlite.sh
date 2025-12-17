@@ -1,8 +1,8 @@
 #!/bin/bash
-# DV-7 Nexus - Script de Inicialização Completa
-# Este script inicializa tanto o backend quanto o frontend para desenvolvimento
+# DV-7 Nexus - Script de Inicialização Completa (SQLite)
+# Este script inicializa tanto o backend quanto o frontend para desenvolvimento com SQLite
 
-echo "🚀 Iniciando DV-7 Nexus - Sistema de Dublagem Neural"
+echo "🚀 Iniciando DV-7 Nexus - Sistema de Dublagem Neural (Modo SQLite)"
 echo "=================================================="
 
 # Função para verificar se uma porta está em uso
@@ -48,16 +48,10 @@ npm install
 # Verificar se podemos acessar o banco de dados
 if [ -f .env ]; then
     echo "🔐 Carregando variáveis de ambiente..."
-    # Se o DATABASE_URL contém "file:" então é SQLite, senão é MySQL
-    if grep -q "file:" .env; then
-        export DB_PROVIDER=sqlite
-    else
-        export DB_PROVIDER=mysql
-    fi
 else
-    echo "📝 Criando arquivo .env de exemplo (usando SQLite por padrão para desenvolvimento)..."
+    echo "📝 Criando arquivo .env de exemplo..."
     cat > .env << EOL
-# DV-7 Nexus Backend Configuration (SQLite por padrão para desenvolvimento)
+# DV-7 Nexus Backend Configuration (SQLite)
 DATABASE_URL="file:./dev.db"
 DB_PROVIDER="sqlite"
 NODE_ENV=development
@@ -66,16 +60,13 @@ FRONTEND_URL=http://localhost:5173
 SECRET_KEY=dv7_nexus_secret_key_2025
 REDIS_URL=redis://localhost:6379
 EOL
-    export DB_PROVIDER=sqlite
 fi
 
-# Executar migrações do banco de dados (Drizzle)
+# Executar migrações do banco de dados (Drizzle com SQLite)
 echo "💾 Executando migrações do banco de dados (Drizzle)..."
-if [ "$DB_PROVIDER" = "sqlite" ]; then
-    npx drizzle-kit generate:sqlite
-else
-    npx drizzle-kit generate:mysql
-fi
+export DB_PROVIDER=sqlite
+export DATABASE_URL="file:./dev.db"
+npx drizzle-kit generate:sqlite
 npx drizzle-kit migrate
 
 # Iniciar backend em background

@@ -1,11 +1,14 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ES2022",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
     "noEmit": true,
     "strict": true,
     "noUnusedLocals": true,
@@ -13,8 +16,13 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["./shared/*"]
+      "@shared/*": [
+        "./shared/*"
+      ]
     }
   },
-  "include": ["src/**/*", "drizzle/**/*"]
+  "include": [
+    "src/**/*",
+    "drizzle/**/*"
+  ]
 }
